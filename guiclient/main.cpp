@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
                " WHERE pkghead_name IN ('xtmfg');" )
           << editionDesc( "Standard",       ":/images/splashStdEdition.png",        true,
                "SELECT fetchMetricText('Application') = 'Standard';" )
-          << editionDesc( "PostBooks",      ":/images/splashPostBooks.png",        false,
+          << editionDesc( "PostBooks",      ":/images/splashPostBooks.png",        true,
                "SELECT fetchMetricText('Application') = 'PostBooks';" )
   ;
 
@@ -356,6 +356,12 @@ int main(int argc, char *argv[])
     if(metric.first())
       rkey = metric.value("metric_value").toString();
     XTupleProductKey pkey(rkey);
+    QString application;
+    metric.exec("SELECT fetchMetricText('Application') as app;");
+     if(metric.first())
+     {
+         application = metric.value("app").toString();
+     }
     if(pkey.valid() && (pkey.version() == 1 || pkey.version() == 2 || pkey.version() == 3))
     {
       if(pkey.expiration() < QDate::currentDate())
@@ -376,6 +382,15 @@ int main(int argc, char *argv[])
         }
         else
           expired = true;
+      }
+      else if(application == "PostBooks" && pkey.users() == 1)
+      {
+        if(pkey.users() < cnt)
+          {
+          checkPass = false;
+          checkPassReason = QObject::tr("<p>Multiple concurrent users of xTuple PostBooks require a license key. Please contact key@xtuple.com to request a free license key for your local installation, or sales@xtuple.com to purchase additional users in the xTuple Cloud Service. <p>Thank you.");
+          checkLock = forced = forceLimit;
+          }
       }
       else if(pkey.users() != 0 && (pkey.users() < cnt || (!xtweb && (pkey.users() * 2 < tot))))
       {
